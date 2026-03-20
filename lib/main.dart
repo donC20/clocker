@@ -1,7 +1,9 @@
-
 import 'dart:async';
+import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -19,9 +21,9 @@ void main() {
 class TimeZoneProvider with ChangeNotifier {
   final List<String> _selectedTimeZones = [
     'Asia/Kolkata',
-    'UTC',
-    'Europe/London',
     'America/Toronto',
+    'Europe/London',
+    'UTC',
   ];
 
   List<String> get selectedTimeZones => _selectedTimeZones;
@@ -48,15 +50,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'World Clock',
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          titleTextStyle: GoogleFonts.orbitron(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        scaffoldBackgroundColor: const Color(0xFF121212),
         textTheme: GoogleFonts.poppinsTextTheme(
           Theme.of(context).textTheme,
         ).apply(
@@ -98,147 +92,205 @@ class _WorldClockScreenState extends State<WorldClockScreen> {
   @override
   Widget build(BuildContext context) {
     final timeZoneProvider = Provider.of<TimeZoneProvider>(context);
+    final timezones = timeZoneProvider.selectedTimeZones;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TimeZoneListScreen(),
-            ),
-          );
-        },
-        backgroundColor: Colors.deepPurple.withOpacity(0.8),
-        elevation: 10,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/images/background.png"),
-            fit: BoxFit.cover,
+      body: SafeArea(
+        child: GridView.builder(
+          padding: const EdgeInsets.all(20.0),
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 300,
+            childAspectRatio: 1.5,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
           ),
-        ),
-        child: SafeArea(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(20.0),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 400,
-              childAspectRatio: 1.7,
-              crossAxisSpacing: 20,
-              mainAxisSpacing: 20,
-            ),
-            itemCount: timeZoneProvider.selectedTimeZones.length,
-            itemBuilder: (context, index) {
-              final timeZoneName = timeZoneProvider.selectedTimeZones[index];
-              return ClockCard(timeZoneName: timeZoneName);
-            },
-          ),
+          itemCount: timezones.length + 1,
+          itemBuilder: (context, index) {
+            if (index == timezones.length) {
+              return const AddTimeZoneNode();
+            }
+            final timeZoneName = timezones[index];
+            return ClockCard(
+              timeZoneName: timeZoneName,
+              key: ValueKey(timeZoneName),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class ClockCard extends StatefulWidget {
+class ClockCard extends StatelessWidget {
   final String timeZoneName;
 
   const ClockCard({super.key, required this.timeZoneName});
 
-  @override
-  _ClockCardState createState() => _ClockCardState();
-}
-
-class _ClockCardState extends State<ClockCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 700),
-      vsync: this,
+  Color _getColorForTimeZone() {
+    final random = Random(timeZoneName.hashCode);
+    return Color.fromARGB(
+      255,
+      random.nextInt(155) + 100,
+      random.nextInt(155) + 100,
+      random.nextInt(155) + 100,
     );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final location = tz.getLocation(widget.timeZoneName);
+    final location = tz.getLocation(timeZoneName);
     final now = tz.TZDateTime.now(location);
+    final timeFormat = DateFormat('HH:mm');
+    final secondsFormat = DateFormat('ss');
+    final dateFormat = DateFormat('E, MMM d');
+    final color = _getColorForTimeZone();
 
-    return FadeTransition(
-      opacity: _animation,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Colors.black.withOpacity(0.5),
-          border: Border.all(
-            color: Colors.deepPurple.withOpacity(0.5),
-            width: 1.5,
-          ),
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F1F1F),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    widget.timeZoneName.split('/').last.replaceAll('_', ' '),
+                    'LOCATION',
                     style: GoogleFonts.poppins(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+                        fontSize: 10, color: Colors.white70),
                   ),
-                  const SizedBox(height: 10),
                   Text(
-                    '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}',
+                    'TIMEZONE',
+                    style: GoogleFonts.poppins(
+                        fontSize: 10, color: Colors.white70),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    timeZoneName.split('/').last.replaceAll('_', ' '),
+                    style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                  Text(
+                    timeZoneName,
+                    style: GoogleFonts.poppins(
+                        fontSize: 12, color: Colors.white70),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    timeFormat.format(now),
                     style: GoogleFonts.orbitron(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: color,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${now.day}/${now.month}/${now.year}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      color: Colors.grey[300],
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      secondsFormat.format(now),
+                      style: GoogleFonts.orbitron(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white70,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                onPressed: () {
-                  Provider.of<TimeZoneProvider>(context, listen: false)
-                      .removeTimeZone(widget.timeZoneName);
-                },
+              const Spacer(),
+              Text(
+                'CURRENT DATE',
+                style:
+                    GoogleFonts.poppins(fontSize: 10, color: Colors.white70),
               ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    dateFormat.format(now),
+                    style: GoogleFonts.poppins(
+                        fontSize: 14, color: Colors.white),
+                  ),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  )
+                ],
+              ),
+            ],
+          ),
+          Positioned(
+            top: -8,
+            right: -8,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white54, size: 18),
+              onPressed: () {
+                Provider.of<TimeZoneProvider>(context, listen: false)
+                    .removeTimeZone(timeZoneName);
+              },
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AddTimeZoneNode extends StatelessWidget {
+  const AddTimeZoneNode({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const TimeZoneListScreen(),
+          ),
+        );
+      },
+      child: DottedBorder(
+        color: Colors.white30,
+        strokeWidth: 2,
+        radius: const Radius.circular(12),
+        dashPattern: const [8, 6],
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add, color: Colors.white54, size: 32),
+              SizedBox(height: 8),
+              Text(
+                'ADD TIMEZONE NODE',
+                style: TextStyle(color: Colors.white54, fontSize: 12),
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -254,67 +306,140 @@ class TimeZoneListScreen extends StatefulWidget {
 
 class _TimeZoneListScreenState extends State<TimeZoneListScreen> {
   String _searchTerm = '';
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final timeZoneProvider = Provider.of<TimeZoneProvider>(context, listen: false);
+    final timeZoneProvider =
+        Provider.of<TimeZoneProvider>(context, listen: false);
     final allTimeZones = tz.timeZoneDatabase.locations.keys
-        .where((tz) =>
-            tz.toLowerCase().contains(_searchTerm.toLowerCase()))
+        .where((tz) => tz.toLowerCase().contains(_searchTerm.toLowerCase()))
         .toList();
 
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         title: const Text('Select a Time Zone'),
+        backgroundColor: const Color(0xFF1F1F1F),
       ),
-      body: Container(
-        color: Colors.black,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  setState(() {
-                    _searchTerm = value;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search for a time zone...',
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white),
-                  filled: true,
-                  fillColor: Colors.grey[900],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              onChanged: (value) {
+                setState(() {
+                  _searchTerm = value;
+                });
+              },
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                filled: true,
+                fillColor: const Color(0xFF1F1F1F),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: allTimeZones.length,
-                itemBuilder: (context, index) {
-                  final timeZoneName = allTimeZones[index];
-                  return ListTile(
-                    title: Text(
-                      timeZoneName.replaceAll('_', ' '),
-                      style: GoogleFonts.poppins(fontSize: 18),
-                    ),
-                    onTap: () {
-                      timeZoneProvider.addTimeZone(timeZoneName);
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: allTimeZones.length,
+              itemBuilder: (context, index) {
+                final timeZoneName = allTimeZones[index];
+                return ListTile(
+                  title: Text(
+                    timeZoneName.replaceAll('_', ' '),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    timeZoneProvider.addTimeZone(timeZoneName);
+                    Navigator.pop(context);
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+
+class DottedBorder extends StatelessWidget {
+  final Widget child;
+  final Color color;
+  final double strokeWidth;
+  final Radius radius;
+  final List<double> dashPattern;
+
+  const DottedBorder({
+    super.key,
+    required this.child,
+    this.color = Colors.black,
+    this.strokeWidth = 1,
+    this.radius = const Radius.circular(0),
+    this.dashPattern = const [3, 1],
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DottedPainter(
+        color: color,
+        strokeWidth: strokeWidth,
+        radius: radius,
+        dashPattern: dashPattern,
+      ),
+      child: child,
+    );
+  }
+}
+
+class _DottedPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final Radius radius;
+  final List<double> dashPattern;
+
+  _DottedPainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.radius,
+    required this.dashPattern,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final Path path = Path();
+    path.addRRect(RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      radius,
+    ));
+
+    final Path dashPath = Path();
+    double distance = 0.0;
+    for (final PathMetric pathMetric in path.computeMetrics()) {
+      while (distance < pathMetric.length) {
+        dashPath.addPath(
+          pathMetric.extractPath(distance, distance + dashPattern[0]),
+          Offset.zero,
+        );
+        distance += dashPattern[0] + dashPattern[1];
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
