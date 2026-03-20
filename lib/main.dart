@@ -95,27 +95,39 @@ class _WorldClockScreenState extends State<WorldClockScreen> {
     final timezones = timeZoneProvider.selectedTimeZones;
 
     return Scaffold(
-      body: SafeArea(
-        child: GridView.builder(
-          padding: const EdgeInsets.all(20.0),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 300,
-            childAspectRatio: 1.5,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(color: const Color(0xFF121212)),
           ),
-          itemCount: timezones.length + 1,
-          itemBuilder: (context, index) {
-            if (index == timezones.length) {
-              return const AddTimeZoneNode();
-            }
-            final timeZoneName = timezones[index];
-            return ClockCard(
-              timeZoneName: timeZoneName,
-              key: ValueKey(timeZoneName),
-            );
-          },
-        ),
+          Positioned.fill(
+            child: CustomPaint(
+              painter: NoisePainter(),
+            ),
+          ),
+          SafeArea(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(20.0),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 300,
+                childAspectRatio: 1.5,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
+              ),
+              itemCount: timezones.length + 1,
+              itemBuilder: (context, index) {
+                if (index == timezones.length) {
+                  return const AddTimeZoneNode();
+                }
+                final timeZoneName = timezones[index];
+                return ClockCard(
+                  timeZoneName: timeZoneName,
+                  key: ValueKey(timeZoneName),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -148,7 +160,11 @@ class ClockCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F1F1F),
+        gradient: RadialGradient(
+          colors: [color.withOpacity(0.3), const Color(0xFF1F1F1F)],
+          center: Alignment.topLeft,
+          radius: 1.5,
+        ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
@@ -369,7 +385,6 @@ class _TimeZoneListScreenState extends State<TimeZoneListScreen> {
   }
 }
 
-
 class DottedBorder extends StatelessWidget {
   final Widget child;
   final Color color;
@@ -442,4 +457,27 @@ class _DottedPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+class NoisePainter extends CustomPainter {
+  final Random _random = Random();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white.withOpacity(0.03);
+    for (int i = 0; i < 5000; i++) {
+      canvas.drawRect(
+        Rect.fromLTWH(
+          _random.nextDouble() * size.width,
+          _random.nextDouble() * size.height,
+          1,
+          1,
+        ),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
