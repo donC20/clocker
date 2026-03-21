@@ -1,4 +1,4 @@
-package com.example.myapp
+package com.obn.clocker
 
 import android.content.pm.ActivityInfo
 import android.os.Build

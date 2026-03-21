@@ -1,5 +1,5 @@
-name: myapp
-description: "A new Flutter project."
+name: clocker
+description: "A premium world clock application."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -22,6 +22,14 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  web: true
+  image_path: "assets/images/app_icon.png"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true
