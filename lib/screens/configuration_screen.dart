@@ -14,7 +14,7 @@ class ConfigurationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeZoneProvider = Provider.of<TimeZoneProvider>(context);
-    final timezones = timeZoneProvider.selectedTimeZones;
+    final timezones = timeZoneProvider.selectedItems;
 
     return Scaffold(
       body: Stack(
@@ -80,15 +80,40 @@ class ConfigurationScreen extends StatelessWidget {
                             timeZoneProvider.reorderTimeZones(oldIndex, newIndex);
                           },
                           children: [
-                            ...timezones.map((tz) => SizedBox(
-                                  width: cardWidth,
-                                  height: cardHeight,
-                                  key: ValueKey(tz),
-                                  child: ClockCard(
-                                    timeZoneName: tz,
-                                    showRemoveButton: true,
-                                  ),
-                                )),
+                            for (int i = 0; i < timezones.length; i++)
+                              SizedBox(
+                                width: cardWidth,
+                                height: cardHeight,
+                                key: ValueKey(timezones[i]),
+                                child: Stack(
+                                  children: [
+                                    ClockCard(
+                                      item: timezones[i],
+                                      showRemoveButton: true,
+                                    ),
+                                    if (!timezones[i].isMerged && i < timezones.length - 1 && !timezones[i + 1].isMerged)
+                                      Positioned(
+                                        bottom: 8,
+                                        right: 40,
+                                        child: IconButton(
+                                          onPressed: () => timeZoneProvider.mergeItems(i),
+                                          icon: const Icon(Icons.merge_type, size: 18, color: Colors.white70),
+                                          tooltip: 'Merge with next',
+                                        ),
+                                      ),
+                                    if (timezones[i].isMerged)
+                                      Positioned(
+                                        bottom: 8,
+                                        right: 40,
+                                        child: IconButton(
+                                          onPressed: () => timeZoneProvider.unmergeItem(i),
+                                          icon: const Icon(Icons.call_split, size: 18, color: Colors.white70),
+                                          tooltip: 'Unmerge',
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
                             SizedBox(
                               width: cardWidth,
                               height: cardHeight,

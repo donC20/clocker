@@ -15,23 +15,11 @@ class ClockScreen extends StatefulWidget {
 }
 
 class _ClockScreenState extends State<ClockScreen> {
-  late Timer _timer;
   bool _showCustomize = false;
   Timer? _hideTimer;
 
   @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-  }
-
-  @override
   void dispose() {
-    _timer.cancel();
     _hideTimer?.cancel();
     super.dispose();
   }
@@ -53,7 +41,7 @@ class _ClockScreenState extends State<ClockScreen> {
   @override
   Widget build(BuildContext context) {
     final timeZoneProvider = Provider.of<TimeZoneProvider>(context);
-    final timezones = timeZoneProvider.selectedTimeZones;
+    final timezones = timeZoneProvider.selectedItems;
 
     return Scaffold(
       body: GestureDetector(
@@ -93,7 +81,7 @@ class _ClockScreenState extends State<ClockScreen> {
                       height: cardHeight,
                       key: ValueKey(tz),
                       child: ClockCard(
-                        timeZoneName: tz,
+                        item: tz,
                         showRemoveButton: false,
                       ),
                     )).toList(),
