@@ -4,18 +4,64 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class TimeZoneItem {
   final List<String> timeZoneNames;
+  final String? customLabel;
+  final int? customColorValue;
+  final bool isAnalog;
+  final String? themePreset;
+  final bool isDayNightEnabled;
+  final List<String> alarms;
   
-  TimeZoneItem({required this.timeZoneNames});
+  TimeZoneItem({
+    required this.timeZoneNames,
+    this.customLabel,
+    this.customColorValue,
+    this.isAnalog = false,
+    this.themePreset,
+    this.isDayNightEnabled = true,
+    this.alarms = const [],
+  });
   
   bool get isMerged => timeZoneNames.length > 1;
   
   Map<String, dynamic> toJson() => {
     'timeZoneNames': timeZoneNames,
+    'customLabel': customLabel,
+    'customColorValue': customColorValue,
+    'isAnalog': isAnalog,
+    'themePreset': themePreset,
+    'isDayNightEnabled': isDayNightEnabled,
+    'alarms': alarms,
   };
   
   factory TimeZoneItem.fromJson(Map<String, dynamic> json) {
     return TimeZoneItem(
       timeZoneNames: List<String>.from(json['timeZoneNames']),
+      customLabel: json['customLabel'],
+      customColorValue: json['customColorValue'],
+      isAnalog: json['isAnalog'] ?? false,
+      themePreset: json['themePreset'],
+      isDayNightEnabled: json['isDayNightEnabled'] ?? true,
+      alarms: json['alarms'] != null ? List<String>.from(json['alarms']) : [],
+    );
+  }
+
+  TimeZoneItem copyWith({
+    List<String>? timeZoneNames,
+    String? customLabel,
+    int? customColorValue,
+    bool? isAnalog,
+    String? themePreset,
+    bool? isDayNightEnabled,
+    List<String>? alarms,
+  }) {
+    return TimeZoneItem(
+      timeZoneNames: timeZoneNames ?? this.timeZoneNames,
+      customLabel: customLabel ?? this.customLabel,
+      customColorValue: customColorValue ?? this.customColorValue,
+      isAnalog: isAnalog ?? this.isAnalog,
+      themePreset: themePreset ?? this.themePreset,
+      isDayNightEnabled: isDayNightEnabled ?? this.isDayNightEnabled,
+      alarms: alarms ?? this.alarms,
     );
   }
 }
@@ -97,6 +143,30 @@ class TimeZoneProvider with ChangeNotifier {
         await _saveToPrefs();
         notifyListeners();
       }
+    }
+  }
+
+  Future<void> updateItemMetadata(
+    TimeZoneItem item, {
+    String? label, 
+    int? colorValue,
+    bool? isAnalog,
+    String? themePreset,
+    bool? isDayNightEnabled,
+    List<String>? alarms,
+  }) async {
+    final index = _selectedItems.indexOf(item);
+    if (index != -1) {
+      _selectedItems[index] = item.copyWith(
+        customLabel: label,
+        customColorValue: colorValue,
+        isAnalog: isAnalog,
+        themePreset: themePreset,
+        isDayNightEnabled: isDayNightEnabled,
+        alarms: alarms,
+      );
+      await _saveToPrefs();
+      notifyListeners();
     }
   }
 

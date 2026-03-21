@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:reorderables/reorderables.dart';
 import '../providers/time_zone_provider.dart';
 import '../widgets/clock_card.dart';
-import '../painters/noise_painter.dart';
+import '../widgets/space_background_painter.dart';
 
 class ClockScreen extends StatefulWidget {
   const ClockScreen({super.key});
@@ -14,13 +14,24 @@ class ClockScreen extends StatefulWidget {
   State<ClockScreen> createState() => _ClockScreenState();
 }
 
-class _ClockScreenState extends State<ClockScreen> {
+class _ClockScreenState extends State<ClockScreen> with SingleTickerProviderStateMixin {
   bool _showCustomize = false;
   Timer? _hideTimer;
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 20),
+    )..repeat();
+  }
 
   @override
   void dispose() {
     _hideTimer?.cancel();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -50,11 +61,13 @@ class _ClockScreenState extends State<ClockScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Container(color: const Color(0xFF121212)),
-            ),
-            Positioned.fill(
-              child: CustomPaint(
-                painter: NoisePainter(),
+              child: AnimatedBuilder(
+                animation: _animationController,
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: SpaceBackgroundPainter(animationValue: _animationController.value),
+                  );
+                },
               ),
             ),
             LayoutBuilder(
@@ -64,12 +77,22 @@ class _ClockScreenState extends State<ClockScreen> {
                 // Switch to 1 column (list) for portrait/mobile, scale for landscape
                 int columns = constraints.maxWidth < 600 ? 1 : (constraints.maxWidth / 300).floor().clamp(2, 5);
                 final double cardWidth = (constraints.maxWidth - (horizontalPadding * 2) - (spacing * (columns - 1))) / columns;
-                // Increased height for list format to avoid vertical overflow (now 200.0 for safety)
-                final double cardHeight = columns == 1 ? 200.0 : max(cardWidth * 0.8, 150.0); 
+                int rows = (timezones.length / columns).ceil();
+                bool isSingleRowLandscape = columns > 1 && rows == 1;
+                final double cardHeight = columns == 1 
+                    ? 200.0 
+                    : (isSingleRowLandscape 
+                        ? (constraints.maxHeight - 40.0).clamp(150.0, 800.0) 
+                        : max(cardWidth * 0.8, 150.0)); 
 
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.only(left: horizontalPadding, top: 20.0, right: horizontalPadding, bottom: 100.0),
+                  padding: EdgeInsets.only(
+                    left: horizontalPadding, 
+                    top: 20.0, 
+                    right: horizontalPadding, 
+                    bottom: isSingleRowLandscape ? 20.0 : 100.0
+                  ),
                   child: ReorderableWrap(
                     spacing: spacing,
                     runSpacing: 20.0,

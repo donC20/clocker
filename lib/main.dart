@@ -37,8 +37,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'World Clock',
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        textTheme: GoogleFonts.poppinsTextTheme(
+        scaffoldBackgroundColor: Colors.black,
+        textTheme: GoogleFonts.outfitTextTheme(
           Theme.of(context).textTheme,
         ).apply(
           bodyColor: Colors.white,
